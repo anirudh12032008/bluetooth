@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>FORKLIFT · BLE CONTROL</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=JetBrains+Mono:wght@400;700&display=swap');
+
+  :root{
+    --bg:#15140f;
+    --panel:#1f1d16;
+    --panel-2:#2a271d;
+    --line:#3a362a;
+    --amber:#f5b417;
+    --amber-dim:#8a6e1f;
+    --green:#39d353;
+    --blue:#2f81f7;
+    --red:#e5484d;
+    --ink:#e9e3cf;
+    --ink-dim:#8f886f;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;height:100%;}
+  body{
+    background:
+      repeating-linear-gradient(45deg, transparent 0 18px, rgba(0,0,0,.12) 18px 36px),
+      radial-gradient(120% 90% at 50% -10%, #211f16 0%, var(--bg) 60%);
+    color:var(--ink);
+    font-family:'JetBrains Mono',monospace;
+    display:flex;justify-content:center;
+    padding:18px;min-height:100%;
+  }
+  .console{
+    width:100%;max-width:440px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    box-shadow:0 30px 70px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.03);
+    overflow:hidden;
+  }
+  /* hazard header */
+  header{
+    background:
+      repeating-linear-gradient(45deg,var(--amber) 0 22px,#1b1a13 22px 44px);
+    padding:0;height:14px;
+  }
+  .bar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:16px 18px 12px;border-bottom:1px solid var(--line);
+    background:linear-gradient(var(--panel-2),var(--panel));
+  }
+  .title{font-family:'Oswald',sans-serif;letter-spacing:.14em;font-weight:700;font-size:20px;}
+  .title span{color:var(--amber);}
+  .status{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink-dim);letter-spacing:.1em;}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--red);box-shadow:0 0 8px var(--red);transition:.3s;}
+  .dot.on{background:var(--green);box-shadow:0 0 10px var(--green);}
+
+  .body{padding:18px;}
+
+  button{
+    font-family:'Oswald',sans-serif;letter-spacing:.08em;font-weight:700;
+    color:var(--ink);background:var(--panel-2);
+    border:1px solid var(--line);border-radius:10px;
+    cursor:pointer;user-select:none;
+    transition:transform .05s, background .15s, border-color .15s;
+  }
+  button:active{transform:translateY(2px);}
+  button:disabled{opacity:.32;cursor:not-allowed;}
+
+  .connect{
+    width:100%;padding:14px;font-size:15px;margin-bottom:16px;
+    background:linear-gradient(var(--amber),var(--amber-dim));
+    color:#1a1710;border-color:var(--amber);
+  }
+  .connect.linked{background:var(--panel-2);color:var(--ink);border-color:var(--green);}
+
+  .label{font-size:10px;letter-spacing:.22em;color:var(--ink-dim);margin:18px 2px 8px;text-transform:uppercase;}
+
+  /* d-pad */
+  .pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .pad button{height:64px;font-size:15px;display:flex;align-items:center;justify-content:center;}
+  .pad .nav{border-color:var(--amber-dim);}
+  .pad .nav:active{background:var(--amber);color:#1a1710;}
+  .ghost{visibility:hidden;}
+  .arrow{font-size:26px;line-height:1;}
+
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .row.three{grid-template-columns:repeat(3,1fr);}
+  .row button{height:52px;font-size:13px;}
+
+  .lift:active{background:var(--amber);color:#1a1710;}
+  .b-blue:active{background:var(--blue);color:#fff;}
+  .b-green:active{background:var(--green);color:#10210f;}
+  .b-off:active{background:#000;}
+
+  .log{
+    margin-top:18px;background:#0e0d09;border:1px solid var(--line);
+    border-radius:8px;padding:10px 12px;height:84px;overflow:auto;
+    font-size:11px;line-height:1.7;color:var(--ink-dim);
+  }
+  .log b{color:var(--amber);}
+  footer{padding:10px 18px 16px;font-size:10px;color:var(--ink-dim);letter-spacing:.08em;text-align:center;}
+</style>
+</head>
+<body>
+<div class="console">
+  <header></header>
+  <div class="bar">
+    <div class="title">FORK<span>LIFT</span></div>
+    <div class="status"><span class="dot" id="dot"></span><span id="statusTxt">OFFLINE</span></div>
+  </div>
+
+  <div class="body">
+    <button class="connect" id="connectBtn">CONNECT BLUETOOTH</button>
+
+    <div class="label">Drive</div>
+    <div class="pad">
+      <div class="ghost"></div>
+      <button class="nav" data-cmd="F"><span class="arrow">▲</span></button>
+      <div class="ghost"></div>
+      <button class="nav" data-cmd="L"><span class="arrow">◀</span></button>
+      <button data-cmd="STOP" id="stopBtn" style="border-color:var(--red);">STOP</button>
+      <button class="nav" data-cmd="R"><span class="arrow">▶</span></button>
+      <div class="ghost"></div>
+      <button class="nav" data-cmd="B"><span class="arrow">▼</span></button>
+      <div class="ghost"></div>
+    </div>
+
+    <div class="label">Lift</div>
+    <div class="row">
+      <button class="lift" data-cmd="SUP">LIFT ▲</button>
+      <button class="lift" data-cmd="SDO">LIFT ▼</button>
+    </div>
+
+    <div class="label">Lights</div>
+    <div class="row three">
+      <button data-cmd="PLL">POLICE</button>
+      <button class="b-blue" data-cmd="BLL">BLUE</button>
+      <button class="b-green" data-cmd="GLL">GREEN</button>
+    </div>
+    <div class="row" style="margin-top:10px;">
+      <button class="b-off" data-cmd="LSS">LIGHTS OFF</button>
+      <div class="row three" style="gap:10px;display:grid;grid-template-columns:1fr 1fr;">
+        <button data-cmd="OLON">OLED CLR</button>
+        <button data-cmd="OLOF">OLED OFF</button>
+      </div>
+    </div>
+
+    <div class="log" id="log"><div>› ready. tap CONNECT.</div></div>
+  </div>
+  <footer>NUS · ESP32-BLE · Chrome / Edge / Android only</footer>
+</div>
+
+<script>
+  // Nordic UART Service UUIDs (must match the firmware)
+  const SVC = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
+  const RX  = '6e400002-b5a3-f393-e0a9-e50e24dcca9e'; // we WRITE here
+  const TX  = '6e400003-b5a3-f393-e0a9-e50e24dcca9e'; // device NOTIFIES here
+
+  let device, rxChar, withResponse = true;
+  const enc = new TextEncoder();
+
+  const $ = id => document.getElementById(id);
+  const dot = $('dot'), statusTxt = $('statusTxt'), logEl = $('log');
+  const connectBtn = $('connectBtn');
+
+  function log(msg, cmd){
+    const d = document.createElement('div');
+    d.innerHTML = cmd ? `› sent <b>${msg}</b>` : `› ${msg}`;
+    logEl.appendChild(d);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function setConnected(on){
+    dot.classList.toggle('on', on);
+    statusTxt.textContent = on ? 'ONLINE' : 'OFFLINE';
+    connectBtn.textContent = on ? 'DISCONNECT' : 'CONNECT BLUETOOTH';
+    connectBtn.classList.toggle('linked', on);
+    document.querySelectorAll('[data-cmd]').forEach(b => b.disabled = !on);
+  }
+  setConnected(false);
+
+  async function connect(){
+    if(!navigator.bluetooth){
+      log('Web Bluetooth not available. Use Chrome/Edge over file:// or https.');
+      return;
+    }
+    try{
+      log('requesting device…');
+      // List ALL nearby BLE devices. optionalServices must still
+      // declare the NUS service so we can use it after connecting.
+      device = await navigator.bluetooth.requestDevice({
+        acceptAllDevices: true,
+        optionalServices: [SVC]
+      });
+      device.addEventListener('gattserverdisconnected', onDisconnect);
+      const server  = await device.gatt.connect();
+      const service = await server.getPrimaryService(SVC);
+      rxChar = await service.getCharacteristic(RX);
+      // prefer writeWithoutResponse if the characteristic supports it
+      withResponse = !rxChar.properties.writeWithoutResponse;
+
+      // optional: listen to notifications coming back from the ESP32
+      try{
+        const txChar = await service.getCharacteristic(TX);
+        await txChar.startNotifications();
+        txChar.addEventListener('characteristicvaluechanged', e=>{
+          log('rx: ' + new TextDecoder().decode(e.target.value));
+        });
+      }catch(_){ /* TX notify optional */ }
+
+      setConnected(true);
+      log('connected to ' + (device.name || 'device'));
+    }catch(err){
+      log('connect failed: ' + err.message);
+    }
+  }
+
+  function onDisconnect(){
+    setConnected(false);
+    log('disconnected.');
+  }
+
+  async function send(cmd){
+    if(!rxChar) return;
+    try{
+      const data = enc.encode(cmd);
+      if(withResponse) await rxChar.writeValueWithResponse(data);
+      else await rxChar.writeValueWithoutResponse(data);
+      log(cmd, true);
+    }catch(err){
+      log('send error: ' + err.message);
+    }
+  }
+
+  connectBtn.addEventListener('click', ()=>{
+    if(device && device.gatt.connected) device.gatt.disconnect();
+    else connect();
+  });
+
+  // STOP isn't a firmware command — drive moves auto-stop after 0.6s.
+  // Re-send the last direction's opposite is overkill; we just log it.
+  document.querySelectorAll('[data-cmd]').forEach(btn=>{
+    const cmd = btn.dataset.cmd;
+    if(cmd === 'STOP'){
+      btn.addEventListener('click', ()=> log('drive auto-stops after each move (0.6s)'));
+      return;
+    }
+    btn.addEventListener('click', ()=> send(cmd));
+  });
+</script>
+</body>
+</html>

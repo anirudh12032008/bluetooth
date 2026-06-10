@@ -209,9 +209,18 @@
     log('disconnected. motors stopped by firmware.');
   }
 
-  // Single fire-and-forget write — no queue, no repeat
+  // Single fire-and-forget write with 100 ms cooldown.
+  // If a send is attempted before the cooldown expires it is silently dropped —
+  // the debounce gates above already guarantee we only call send() at the
+  // right moments, so a dropped packet here just means a redundant event.
+  let _lastSentAt = 0;
+  const CMD_COOLDOWN_MS = 100;
+
   async function send(cmd){
     if(!rxChar) return;
+    const now = Date.now();
+    if(now - _lastSentAt < CMD_COOLDOWN_MS) return; // cooldown active — drop
+    _lastSentAt = now;
     try{
       await (withResponse
         ? rxChar.writeValueWithResponse(enc.encode(cmd))

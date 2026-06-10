@@ -39,7 +39,6 @@
     box-shadow:0 30px 70px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.03);
     overflow:hidden;
   }
-  /* hazard header */
   header{
     background:
       repeating-linear-gradient(45deg,var(--amber) 0 22px,#1b1a13 22px 44px);
@@ -56,6 +55,13 @@
   .dot{width:10px;height:10px;border-radius:50%;background:var(--red);box-shadow:0 0 8px var(--red);transition:.3s;}
   .dot.on{background:var(--green);box-shadow:0 0 10px var(--green);}
 
+  /* Sending pulse indicator */
+  .tx-flash{
+    width:8px;height:8px;border-radius:50%;background:var(--amber);
+    opacity:0;transition:opacity .05s;margin-left:4px;
+  }
+  .tx-flash.active{opacity:1;}
+
   .body{padding:18px;}
 
   button{
@@ -63,10 +69,24 @@
     color:var(--ink);background:var(--panel-2);
     border:1px solid var(--line);border-radius:10px;
     cursor:pointer;user-select:none;
-    transition:transform .05s, background .15s, border-color .15s;
+    transition:transform .05s, background .1s, border-color .1s;
+    touch-action:none; /* prevent scroll-fighting on mobile */
   }
-  button:active{transform:translateY(2px);}
   button:disabled{opacity:.32;cursor:not-allowed;}
+
+  /* Momentary pressed state — applied via JS, not :active,
+     so it stays lit the whole time the pointer is down */
+  button.pressed{
+    transform:translateY(2px) scale(.97);
+    background:var(--amber);
+    color:#1a1710;
+    border-color:var(--amber);
+  }
+  .nav.pressed{background:var(--amber);color:#1a1710;border-color:var(--amber);}
+  .lift.pressed{background:var(--amber);color:#1a1710;border-color:var(--amber);}
+  .b-blue.pressed{background:var(--blue);color:#fff;border-color:var(--blue);}
+  .b-green.pressed{background:var(--green);color:#10210f;border-color:var(--green);}
+  .b-off.pressed{background:#111;border-color:#444;}
 
   .connect{
     width:100%;padding:14px;font-size:15px;margin-bottom:16px;
@@ -75,24 +95,29 @@
   }
   .connect.linked{background:var(--panel-2);color:var(--ink);border-color:var(--green);}
 
-  .label{font-size:10px;letter-spacing:.22em;color:var(--ink-dim);margin:18px 2px 8px;text-transform:uppercase;}
+  .label{
+    font-size:10px;letter-spacing:.22em;color:var(--ink-dim);
+    margin:18px 2px 8px;text-transform:uppercase;
+    display:flex;align-items:center;gap:8px;
+  }
+  .label::after{content:'';flex:1;height:1px;background:var(--line);}
 
-  /* d-pad */
+  /* hint tag shown next to drive label */
+  .hint{
+    font-size:9px;letter-spacing:.05em;color:var(--amber-dim);
+    background:rgba(245,180,23,.08);border:1px solid var(--amber-dim);
+    padding:1px 6px;border-radius:4px;white-space:nowrap;
+  }
+
   .pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
-  .pad button{height:64px;font-size:15px;display:flex;align-items:center;justify-content:center;}
+  .pad button{height:72px;font-size:15px;display:flex;align-items:center;justify-content:center;}
   .pad .nav{border-color:var(--amber-dim);}
-  .pad .nav:active{background:var(--amber);color:#1a1710;}
   .ghost{visibility:hidden;}
-  .arrow{font-size:26px;line-height:1;}
+  .arrow{font-size:28px;line-height:1;pointer-events:none;}
 
   .row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
   .row.three{grid-template-columns:repeat(3,1fr);}
   .row button{height:52px;font-size:13px;}
-
-  .lift:active{background:var(--amber);color:#1a1710;}
-  .b-blue:active{background:var(--blue);color:#fff;}
-  .b-green:active{background:var(--green);color:#10210f;}
-  .b-off:active{background:#000;}
 
   .log{
     margin-top:18px;background:#0e0d09;border:1px solid var(--line);
@@ -100,6 +125,8 @@
     font-size:11px;line-height:1.7;color:var(--ink-dim);
   }
   .log b{color:var(--amber);}
+  .log .rx{color:var(--blue);}
+
   footer{padding:10px 18px 16px;font-size:10px;color:var(--ink-dim);letter-spacing:.08em;text-align:center;}
 </style>
 </head>
@@ -108,26 +135,33 @@
   <header></header>
   <div class="bar">
     <div class="title">FORK<span>LIFT</span></div>
-    <div class="status"><span class="dot" id="dot"></span><span id="statusTxt">OFFLINE</span></div>
+    <div class="status">
+      <span class="dot" id="dot"></span>
+      <span id="statusTxt">OFFLINE</span>
+      <span class="tx-flash" id="txFlash"></span>
+    </div>
   </div>
 
   <div class="body">
     <button class="connect" id="connectBtn">CONNECT BLUETOOTH</button>
 
-    <div class="label">Drive</div>
+    <div class="label">
+      Drive
+      <span class="hint">HOLD to move · release to stop</span>
+    </div>
     <div class="pad">
       <div class="ghost"></div>
       <button class="nav" data-cmd="F"><span class="arrow">▲</span></button>
       <div class="ghost"></div>
       <button class="nav" data-cmd="L"><span class="arrow">◀</span></button>
-      <button data-cmd="STOP" id="stopBtn" style="border-color:var(--red);">STOP</button>
+      <button data-cmd="STOP" id="stopBtn" style="border-color:var(--red);font-size:13px;">■ STOP</button>
       <button class="nav" data-cmd="R"><span class="arrow">▶</span></button>
       <div class="ghost"></div>
       <button class="nav" data-cmd="B"><span class="arrow">▼</span></button>
       <div class="ghost"></div>
     </div>
 
-    <div class="label">Lift</div>
+    <div class="label">Lift <span class="hint">HOLD to move</span></div>
     <div class="row">
       <button class="lift" data-cmd="SUP">LIFT ▲</button>
       <button class="lift" data-cmd="SDO">LIFT ▼</button>
@@ -141,7 +175,7 @@
     </div>
     <div class="row" style="margin-top:10px;">
       <button class="b-off" data-cmd="LSS">LIGHTS OFF</button>
-      <div class="row three" style="gap:10px;display:grid;grid-template-columns:1fr 1fr;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <button data-cmd="OLON">OLED CLR</button>
         <button data-cmd="OLOF">OLED OFF</button>
       </div>
@@ -153,25 +187,34 @@
 </div>
 
 <script>
-  // Nordic UART Service UUIDs (must match the firmware)
   const SVC = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
-  const RX  = '6e400002-b5a3-f393-e0a9-e50e24dcca9e'; // we WRITE here
-  const TX  = '6e400003-b5a3-f393-e0a9-e50e24dcca9e'; // device NOTIFIES here
+  const RX  = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
+  const TX  = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
+
+  // Commands that repeat while held vs. fire once and done
+  const MOMENTARY_CMDS = new Set(['F','B','L','R','SUP','SDO']);
+  const REPEAT_MS = 100; // send interval while held
 
   let device, rxChar, withResponse = true;
   const enc = new TextEncoder();
 
   const $ = id => document.getElementById(id);
-  const dot = $('dot'), statusTxt = $('statusTxt'), logEl = $('log');
-  const connectBtn = $('connectBtn');
+  const dot = $('dot'), statusTxt = $('statusTxt');
+  const txFlash = $('txFlash'), logEl = $('log'), connectBtn = $('connectBtn');
 
-  function log(msg, cmd){
+  // ── Logging ──────────────────────────────────────────────────────────────
+  function log(msg, type = ''){
     const d = document.createElement('div');
-    d.innerHTML = cmd ? `› sent <b>${msg}</b>` : `› ${msg}`;
+    if(type === 'cmd')  d.innerHTML = `› tx <b>${msg}</b>`;
+    else if(type === 'rx') d.innerHTML = `<span class="rx">← ${msg}</span>`;
+    else d.textContent = '› ' + msg;
     logEl.appendChild(d);
+    // keep last 60 lines
+    while(logEl.children.length > 60) logEl.firstChild.remove();
     logEl.scrollTop = logEl.scrollHeight;
   }
 
+  // ── UI state ──────────────────────────────────────────────────────────────
   function setConnected(on){
     dot.classList.toggle('on', on);
     statusTxt.textContent = on ? 'ONLINE' : 'OFFLINE';
@@ -181,15 +224,14 @@
   }
   setConnected(false);
 
+  // ── BLE ───────────────────────────────────────────────────────────────────
   async function connect(){
     if(!navigator.bluetooth){
-      log('Web Bluetooth not available. Use Chrome/Edge over file:// or https.');
+      log('Web Bluetooth not available. Use Chrome/Edge.');
       return;
     }
     try{
       log('requesting device…');
-      // List ALL nearby BLE devices. optionalServices must still
-      // declare the NUS service so we can use it after connecting.
       device = await navigator.bluetooth.requestDevice({
         acceptAllDevices: true,
         optionalServices: [SVC]
@@ -198,17 +240,15 @@
       const server  = await device.gatt.connect();
       const service = await server.getPrimaryService(SVC);
       rxChar = await service.getCharacteristic(RX);
-      // prefer writeWithoutResponse if the characteristic supports it
       withResponse = !rxChar.properties.writeWithoutResponse;
 
-      // optional: listen to notifications coming back from the ESP32
       try{
         const txChar = await service.getCharacteristic(TX);
         await txChar.startNotifications();
-        txChar.addEventListener('characteristicvaluechanged', e=>{
-          log('rx: ' + new TextDecoder().decode(e.target.value));
+        txChar.addEventListener('characteristicvaluechanged', e =>{
+          log(new TextDecoder().decode(e.target.value), 'rx');
         });
-      }catch(_){ /* TX notify optional */ }
+      }catch(_){}
 
       setConnected(true);
       log('connected to ' + (device.name || 'device'));
@@ -218,37 +258,105 @@
   }
 
   function onDisconnect(){
+    stopRepeat();
     setConnected(false);
     log('disconnected.');
   }
 
-  async function send(cmd){
-    if(!rxChar) return;
-    try{
-      const data = enc.encode(cmd);
-      if(withResponse) await rxChar.writeValueWithResponse(data);
-      else await rxChar.writeValueWithoutResponse(data);
-      log(cmd, true);
-    }catch(err){
-      log('send error: ' + err.message);
-    }
+  // ── Send ──────────────────────────────────────────────────────────────────
+  let _flashTimer = null;
+  function flashTx(){
+    txFlash.classList.add('active');
+    clearTimeout(_flashTimer);
+    _flashTimer = setTimeout(() => txFlash.classList.remove('active'), 80);
   }
 
-  connectBtn.addEventListener('click', ()=>{
+  // Queue so we never overlap awaits
+  let _sending = false, _queue = null;
+  async function send(cmd, quiet = false){
+    if(!rxChar) return;
+    _queue = cmd;
+    if(_sending) return;
+    _sending = true;
+    while(_queue !== null){
+      const c = _queue; _queue = null;
+      try{
+        const data = enc.encode(c);
+        if(withResponse) await rxChar.writeValueWithResponse(data);
+        else await rxChar.writeValueWithoutResponse(data);
+        if(!quiet) log(c, 'cmd');
+        flashTx();
+      }catch(err){
+        log('send error: ' + err.message);
+      }
+    }
+    _sending = false;
+  }
+
+  // ── Momentary hold logic ──────────────────────────────────────────────────
+  let repeatInterval = null;
+  let activeBtn = null;
+
+  function startRepeat(cmd, btn){
+    stopRepeat(); // clear any existing
+    activeBtn = btn;
+    btn.classList.add('pressed');
+    // fire immediately, then repeat
+    send(cmd, true);
+    log(cmd + ' (hold)', 'cmd');
+    repeatInterval = setInterval(() => send(cmd, true), REPEAT_MS);
+  }
+
+  function stopRepeat(){
+    if(repeatInterval){ clearInterval(repeatInterval); repeatInterval = null; }
+    if(activeBtn){ activeBtn.classList.remove('pressed'); activeBtn = null; }
+  }
+
+  async function stopAndSend(){
+    stopRepeat();
+    // Send STOP so firmware halts immediately rather than waiting for timeout
+    await send('STOP', true);
+    log('STOP', 'cmd');
+  }
+
+  // ── Button wiring ─────────────────────────────────────────────────────────
+  connectBtn.addEventListener('click', () =>{
     if(device && device.gatt.connected) device.gatt.disconnect();
     else connect();
   });
 
-  // STOP isn't a firmware command — drive moves auto-stop after 0.6s.
-  // Re-send the last direction's opposite is overkill; we just log it.
-  document.querySelectorAll('[data-cmd]').forEach(btn=>{
+  document.querySelectorAll('[data-cmd]').forEach(btn =>{
     const cmd = btn.dataset.cmd;
-    if(cmd === 'STOP'){
-      btn.addEventListener('click', ()=> log('drive auto-stops after each move (0.6s)'));
-      return;
+
+    if(MOMENTARY_CMDS.has(cmd)){
+      // Momentary: hold repeats, release stops
+      btn.addEventListener('pointerdown', e =>{
+        e.preventDefault();
+        btn.setPointerCapture(e.pointerId);
+        startRepeat(cmd, btn);
+      });
+      btn.addEventListener('pointerup',     () => stopAndSend());
+      btn.addEventListener('pointercancel', () => stopAndSend());
+      // also stop if pointer drifts off while still held
+      btn.addEventListener('pointerleave',  () => { if(activeBtn === btn) stopAndSend(); });
+
+    } else if(cmd === 'STOP'){
+      // Dedicated STOP button: tap to send immediate stop
+      btn.addEventListener('click', () => send('STOP'));
+
+    } else {
+      // Toggle/one-shot commands (lights, OLED): single tap
+      btn.addEventListener('pointerdown', e => e.preventDefault());
+      btn.addEventListener('click', () =>{
+        btn.classList.add('pressed');
+        setTimeout(() => btn.classList.remove('pressed'), 200);
+        send(cmd);
+      });
     }
-    btn.addEventListener('click', ()=> send(cmd));
   });
+
+  // Safety: if user lifts finger anywhere on the page, kill repeat
+  document.addEventListener('pointerup', () =>{ if(activeBtn) stopAndSend(); });
 </script>
 </body>
 </html>

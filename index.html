@@ -6,43 +6,27 @@
 <title>FORKLIFT · BLE CONTROL</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=JetBrains+Mono:wght@400;700&display=swap');
-
   :root{
-    --bg:#15140f;
-    --panel:#1f1d16;
-    --panel-2:#2a271d;
-    --line:#3a362a;
-    --amber:#f5b417;
-    --amber-dim:#8a6e1f;
-    --green:#39d353;
-    --blue:#2f81f7;
-    --red:#e5484d;
-    --ink:#e9e3cf;
-    --ink-dim:#8f886f;
+    --bg:#15140f; --panel:#1f1d16; --panel-2:#2a271d; --line:#3a362a;
+    --amber:#f5b417; --amber-dim:#8a6e1f; --green:#39d353;
+    --blue:#2f81f7; --red:#e5484d; --ink:#e9e3cf; --ink-dim:#8f886f;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;height:100%;}
   body{
     background:
-      repeating-linear-gradient(45deg, transparent 0 18px, rgba(0,0,0,.12) 18px 36px),
-      radial-gradient(120% 90% at 50% -10%, #211f16 0%, var(--bg) 60%);
-    color:var(--ink);
-    font-family:'JetBrains Mono',monospace;
-    display:flex;justify-content:center;
-    padding:18px;min-height:100%;
+      repeating-linear-gradient(45deg,transparent 0 18px,rgba(0,0,0,.12) 18px 36px),
+      radial-gradient(120% 90% at 50% -10%,#211f16 0%,var(--bg) 60%);
+    color:var(--ink);font-family:'JetBrains Mono',monospace;
+    display:flex;justify-content:center;padding:18px;min-height:100%;
   }
   .console{
-    width:100%;max-width:440px;
-    background:var(--panel);
-    border:1px solid var(--line);
-    border-radius:14px;
-    box-shadow:0 30px 70px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.03);
+    width:100%;max-width:440px;background:var(--panel);
+    border:1px solid var(--line);border-radius:14px;
+    box-shadow:0 30px 70px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.03);
     overflow:hidden;
   }
-  header{
-    background:repeating-linear-gradient(45deg,var(--amber) 0 22px,#1b1a13 22px 44px);
-    height:14px;
-  }
+  header{background:repeating-linear-gradient(45deg,var(--amber) 0 22px,#1b1a13 22px 44px);height:14px;}
   .bar{
     display:flex;align-items:center;justify-content:space-between;
     padding:16px 18px 12px;border-bottom:1px solid var(--line);
@@ -55,35 +39,28 @@
   .dot.on{background:var(--green);box-shadow:0 0 10px var(--green);}
   .tx{width:8px;height:8px;border-radius:50%;background:var(--amber);opacity:0;transition:opacity .06s;}
   .tx.flash{opacity:1;}
-
   .body{padding:18px;}
-
   button{
     font-family:'Oswald',sans-serif;letter-spacing:.08em;font-weight:700;
-    color:var(--ink);background:var(--panel-2);
-    border:1px solid var(--line);border-radius:10px;
-    cursor:pointer;user-select:none;touch-action:none;
-    transition:background .08s, border-color .08s, transform .04s, color .08s;
+    color:var(--ink);background:var(--panel-2);border:1px solid var(--line);
+    border-radius:10px;cursor:pointer;user-select:none;touch-action:none;
+    transition:background .08s,border-color .08s,transform .04s,color .08s;
   }
   button:disabled{opacity:.32;cursor:not-allowed;}
-
   button.held{transform:translateY(2px) scale(.97);}
-  .nav.held        {background:var(--amber);   color:#1a1710; border-color:var(--amber);}
-  .lift.held       {background:var(--amber);   color:#1a1710; border-color:var(--amber);}
-  .b-blue.held     {background:var(--blue);    color:#fff;    border-color:var(--blue);}
-  .b-green.held    {background:var(--green);   color:#10210f; border-color:var(--green);}
-  .b-red.held      {background:var(--red);     color:#fff;    border-color:var(--red);}
-  .b-off.held      {background:#111;           border-color:#555;}
-  .tapped{background:var(--amber-dim) !important;color:#1a1710 !important;border-color:var(--amber) !important;}
-
+  .nav.held  {background:var(--amber);color:#1a1710;border-color:var(--amber);}
+  .lift.held {background:var(--amber);color:#1a1710;border-color:var(--amber);}
+  .b-red.held{background:var(--red);  color:#fff;   border-color:var(--red);}
+  .b-blue.held {background:var(--blue); color:#fff;   border-color:var(--blue);}
+  .b-green.held{background:var(--green);color:#10210f;border-color:var(--green);}
+  .b-off.held  {background:#111;border-color:#555;}
+  .tapped{background:var(--amber-dim)!important;color:#1a1710!important;border-color:var(--amber)!important;}
   .connect{
     width:100%;padding:14px;font-size:15px;margin-bottom:16px;
     background:linear-gradient(var(--amber),var(--amber-dim));
-    color:#1a1710;border-color:var(--amber);
-    touch-action:auto;
+    color:#1a1710;border-color:var(--amber);touch-action:auto;
   }
   .connect.linked{background:var(--panel-2);color:var(--ink);border-color:var(--green);}
-
   .label{
     font-size:10px;letter-spacing:.22em;color:var(--ink-dim);
     margin:18px 2px 8px;text-transform:uppercase;
@@ -95,24 +72,20 @@
     background:rgba(245,180,23,.07);border:1px solid rgba(245,180,23,.25);
     padding:1px 6px;border-radius:4px;white-space:nowrap;
   }
-
   .pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
   .pad button{height:72px;font-size:15px;display:flex;align-items:center;justify-content:center;}
   .pad .nav{border-color:var(--amber-dim);}
   .ghost{visibility:hidden;}
   .arrow{font-size:28px;line-height:1;pointer-events:none;}
-
   .row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
   .row.three{grid-template-columns:repeat(3,1fr);}
   .row button{height:52px;font-size:13px;}
-
   .log{
     margin-top:18px;background:#0e0d09;border:1px solid var(--line);
     border-radius:8px;padding:10px 12px;height:84px;overflow:auto;
     font-size:11px;line-height:1.7;color:var(--ink-dim);
   }
-  .log b{color:var(--amber);}
-  .log .rx{color:var(--blue);}
+  .log b{color:var(--amber);} .log .rx{color:var(--blue);}
   footer{padding:10px 18px 16px;font-size:10px;color:var(--ink-dim);letter-spacing:.08em;text-align:center;}
 </style>
 </head>
@@ -127,20 +100,19 @@
       <span class="tx" id="tx"></span>
     </div>
   </div>
-
   <div class="body">
     <button class="connect" id="connectBtn">CONNECT BLUETOOTH</button>
 
     <div class="label">Drive <span class="hint">HOLD to move · release = STOP</span></div>
     <div class="pad">
       <div class="ghost"></div>
-      <button class="nav" data-cmd="F" data-momentary="1"><span class="arrow">▲</span></button>
+      <button class="nav" data-cmd="F" data-momentary="1"><span class="arrow">&#9650;</span></button>
       <div class="ghost"></div>
-      <button class="nav" data-cmd="L" data-momentary="1"><span class="arrow">◀</span></button>
-      <button class="b-red" data-cmd="STOP" id="stopBtn" style="font-size:13px;">&#9632; STOP</button>
-      <button class="nav" data-cmd="R" data-momentary="1"><span class="arrow">▶</span></button>
+      <button class="nav" data-cmd="L" data-momentary="1"><span class="arrow">&#9664;</span></button>
+      <button class="b-red" data-cmd="STOP" style="font-size:13px;">&#9632; STOP</button>
+      <button class="nav" data-cmd="R" data-momentary="1"><span class="arrow">&#9654;</span></button>
       <div class="ghost"></div>
-      <button class="nav" data-cmd="B" data-momentary="1"><span class="arrow">▼</span></button>
+      <button class="nav" data-cmd="B" data-momentary="1"><span class="arrow">&#9660;</span></button>
       <div class="ghost"></div>
     </div>
 
@@ -176,14 +148,14 @@
 
   let device, rxChar, withResponse = true;
   const enc = new TextEncoder();
+  const $   = id => document.getElementById(id);
+  const dot = $('dot'), statusTxt = $('statusTxt');
+  const txDot = $('tx'), logEl = $('log'), connectBtn = $('connectBtn');
 
-  const $  = id => document.getElementById(id);
-  const dot = $('dot'), statusTxt = $('statusTxt'), txDot = $('tx');
-  const logEl = $('log'), connectBtn = $('connectBtn');
-
-  function log(msg){
+  // ── Log ──────────────────────────────────────────────
+  function log(html){
     const d = document.createElement('div');
-    d.innerHTML = msg;
+    d.innerHTML = html;
     logEl.appendChild(d);
     while(logEl.children.length > 60) logEl.firstChild.remove();
     logEl.scrollTop = logEl.scrollHeight;
@@ -196,6 +168,7 @@
     _ft = setTimeout(()=> txDot.classList.remove('flash'), 90);
   }
 
+  // ── Connection UI ────────────────────────────────────
   function setConnected(on){
     dot.classList.toggle('on', on);
     statusTxt.textContent = on ? 'ONLINE' : 'OFFLINE';
@@ -205,6 +178,7 @@
   }
   setConnected(false);
 
+  // ── BLE ──────────────────────────────────────────────
   async function connect(){
     if(!navigator.bluetooth){ log('Web Bluetooth not available.'); return; }
     try{
@@ -228,11 +202,14 @@
   }
 
   function onDisconnect(){
+    // BLE dropped — reset state without sending (link is gone)
+    _isHeld = false;
+    if(_heldBtn){ _heldBtn.classList.remove('held'); _heldBtn = null; }
     setConnected(false);
-    log('disconnected.');
+    log('disconnected. motors stopped by firmware.');
   }
 
-  // Single fire-and-forget send — no queue, no interval
+  // Single fire-and-forget write — no queue, no repeat
   async function send(cmd){
     if(!rxChar) return;
     try{
@@ -243,43 +220,57 @@
     }catch(err){ log('send err: ' + err.message); }
   }
 
+  // ── Momentary button state ───────────────────────────
+  // Exactly ONE command sent on press, exactly ONE "STOP" sent on release.
+  // A debounce flag (_isHeld) prevents re-entry so even if pointerup fires
+  // from multiple sources (button capture + document fallback), STOP goes
+  // out only once.
+
+  let _heldBtn = null;
+  let _isHeld  = false;   // debounce gate
+
+  function onPress(btn, cmd){
+    if(_isHeld) return;   // already processing a hold — ignore ghost events
+    _isHeld  = true;
+    _heldBtn = btn;
+    btn.classList.add('held');
+    send(cmd);
+    log(`tx <b>${cmd}</b>`);
+  }
+
+  function onRelease(){
+    if(!_isHeld) return;  // nothing was held — ignore duplicate release events
+    _isHeld = false;
+    if(_heldBtn){ _heldBtn.classList.remove('held'); _heldBtn = null; }
+    send('STOP');
+    log('tx <b>STOP</b>');
+  }
+
+  // ── Wire buttons ─────────────────────────────────────
   connectBtn.addEventListener('click', ()=>{
     if(device && device.gatt.connected) device.gatt.disconnect();
     else connect();
   });
-
-  let heldBtn = null;
-
-  function releaseHeld(){
-    if(!heldBtn) return;
-    heldBtn.classList.remove('held');
-    heldBtn = null;
-    send('STOP');
-    log('tx <b>STOP</b>');
-  }
 
   document.querySelectorAll('[data-cmd]').forEach(btn =>{
     const cmd       = btn.dataset.cmd;
     const momentary = btn.dataset.momentary === '1';
 
     if(momentary){
-      // Press: send command ONCE, robot runs until STOP
       btn.addEventListener('pointerdown', e =>{
         e.preventDefault();
-        btn.setPointerCapture(e.pointerId);
-        releaseHeld();
-        heldBtn = btn;
-        btn.classList.add('held');
-        send(cmd);
-        log(`tx <b>${cmd}</b>`);
+        btn.setPointerCapture(e.pointerId); // all subsequent pointer events stay on this btn
+        onPress(btn, cmd);
       });
-      btn.addEventListener('pointerup',     releaseHeld);
-      btn.addEventListener('pointercancel', releaseHeld);
+      // setPointerCapture means pointerup always fires here, even if finger drifts off
+      btn.addEventListener('pointerup',     onRelease);
+      btn.addEventListener('pointercancel', onRelease);
 
     } else if(cmd === 'STOP'){
       btn.addEventListener('pointerdown', e => e.preventDefault());
       btn.addEventListener('click', ()=>{
-        releaseHeld();
+        onRelease();          // clears any held state first
+        send('STOP');         // explicit stop even if nothing was held
         log('tx <b>STOP</b> (manual)');
       });
 
@@ -295,9 +286,16 @@
     }
   });
 
-  // Global safety net
-  document.addEventListener('pointerup', releaseHeld);
-  document.addEventListener('visibilitychange', ()=>{ if(document.hidden) releaseHeld(); });
+  // Last-resort fallback: if pointer is released outside everything
+  // (e.g. finger slides off screen edge), _isHeld gate still ensures
+  // this only fires STOP once even if the button's own pointerup already fired.
+  document.addEventListener('pointerup',     onRelease);
+  document.addEventListener('pointercancel', onRelease);
+
+  // Tab switch / screen lock safety
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.hidden) onRelease();
+  });
 </script>
 </body>
 </html>

@@ -218,9 +218,12 @@
 
   async function send(cmd){
     if(!rxChar) return;
-    const now = Date.now();
-    if(now - _lastSentAt < CMD_COOLDOWN_MS) return; // cooldown active — drop
-    _lastSentAt = now;
+    // STOP is safety-critical — never drop it, always goes straight through
+    if(cmd !== 'STOP'){
+      const now = Date.now();
+      if(now - _lastSentAt < CMD_COOLDOWN_MS) return; // cooldown active — drop
+      _lastSentAt = now;
+    }
     try{
       await (withResponse
         ? rxChar.writeValueWithResponse(enc.encode(cmd))

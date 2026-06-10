@@ -209,27 +209,34 @@
     log('disconnected. motors stopped by firmware.');
   }
 
-  // Single fire-and-forget write with 100 ms cooldown.
-  // If a send is attempted before the cooldown expires it is silently dropped —
-  // the debounce gates above already guarantee we only call send() at the
-  // right moments, so a dropped packet here just means a redundant event.
-  let _lastSentAt = 0;
-  const CMD_COOLDOWN_MS = 100;
-
+  // Simple fire-and-forget — no cooldown here.
+  // Button lockout (below) handles accidental multi-presses instead.
   async function send(cmd){
     if(!rxChar) return;
-    // STOP is safety-critical — never drop it, always goes straight through
-    if(cmd !== 'STOP'){
-      const now = Date.now();
-      if(now - _lastSentAt < CMD_COOLDOWN_MS) return; // cooldown active — drop
-      _lastSentAt = now;
-    }
     try{
       await (withResponse
         ? rxChar.writeValueWithResponse(enc.encode(cmd))
         : rxChar.writeValueWithoutResponse(enc.encode(cmd)));
       flashTx();
     }catch(err){ log('send err: ' + err.message); }
+  }
+
+  // Disable every [data-cmd] button except the one being held for 100 ms.
+  // Re-enabled automatically on release (or after timeout as safety net).
+  const LOCKOUT_MS = 100;
+  let _lockoutTimer = null;
+
+  function lockOthers(activeBtn){
+    clearTimeout(_lockoutTimer);
+    document.querySelectorAll('[data-cmd]').forEach(b =>{
+      if(b !== activeBtn) b.disabled = true;
+    });
+    _lockoutTimer = setTimeout(unlockAll, LOCKOUT_MS);
+  }
+
+  function unlockAll(){
+    clearTimeout(_lockoutTimer);
+    document.querySelectorAll('[data-cmd]').forEach(b => b.disabled = false);
   }
 
   // ── Momentary button state ───────────────────────────
@@ -242,18 +249,20 @@
   let _isHeld  = false;   // debounce gate
 
   function onPress(btn, cmd){
-    if(_isHeld) return;   // already processing a hold — ignore ghost events
+    if(_isHeld) return;
     _isHeld  = true;
     _heldBtn = btn;
     btn.classList.add('held');
+    lockOthers(btn);
     send(cmd);
     log(`tx <b>${cmd}</b>`);
   }
 
   function onRelease(){
-    if(!_isHeld) return;  // nothing was held — ignore duplicate release events
+    if(!_isHeld) return;
     _isHeld = false;
     if(_heldBtn){ _heldBtn.classList.remove('held'); _heldBtn = null; }
+    unlockAll();
     send('STOP');
     log('tx <b>STOP</b>');
   }

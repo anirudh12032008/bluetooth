@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TURRET · BLE CONTROL</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=JetBrains+Mono:wght@400;700&display=swap');
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel-2:#1f242e; --line:#2c3340;
+    --accent:#ff5533; --accent-dim:#8a3320; --green:#39d353;
+    --blue:#2f81f7; --red:#e5484d; --ink:#dde3ec; --ink-dim:#727c8e;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;height:100%;}
+  body{
+    background:
+      repeating-linear-gradient(45deg,transparent 0 18px,rgba(0,0,0,.16) 18px 36px),
+      radial-gradient(120% 90% at 50% -10%,#1a1e27 0%,var(--bg) 60%);
+    color:var(--ink);font-family:'JetBrains Mono',monospace;
+    display:flex;justify-content:center;padding:18px;min-height:100%;
+  }
+  .console{
+    width:100%;max-width:440px;background:var(--panel);
+    border:1px solid var(--line);border-radius:14px;
+    box-shadow:0 30px 70px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.03);
+    overflow:hidden;
+  }
+  header{background:repeating-linear-gradient(45deg,var(--accent) 0 22px,#141318 22px 44px);height:14px;}
+  .bar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:16px 18px 12px;border-bottom:1px solid var(--line);
+    background:linear-gradient(var(--panel-2),var(--panel));
+  }
+  .title{font-family:'Oswald',sans-serif;letter-spacing:.14em;font-weight:700;font-size:20px;}
+  .title span{color:var(--accent);}
+  .status{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink-dim);letter-spacing:.1em;}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--red);box-shadow:0 0 8px var(--red);transition:.3s;}
+  .dot.on{background:var(--green);box-shadow:0 0 10px var(--green);}
+  .tx{width:8px;height:8px;border-radius:50%;background:var(--accent);opacity:0;transition:opacity .06s;}
+  .tx.flash{opacity:1;}
+  .body{padding:18px;}
+  button{
+    font-family:'Oswald',sans-serif;letter-spacing:.08em;font-weight:700;
+    color:var(--ink);background:var(--panel-2);border:1px solid var(--line);
+    border-radius:10px;cursor:pointer;user-select:none;touch-action:none;
+    transition:background .08s,border-color .08s,transform .04s,color .08s;
+  }
+  button:disabled{opacity:.32;cursor:not-allowed;}
+  button.held{transform:translateY(2px) scale(.97);}
+  .nav.held {background:var(--accent);color:#16100e;border-color:var(--accent);}
+  .b-red.held{background:var(--red);color:#fff;border-color:var(--red);}
+  .tapped{background:var(--accent-dim)!important;color:#fff!important;border-color:var(--accent)!important;}
+  .connect{
+    width:100%;padding:14px;font-size:15px;margin-bottom:16px;
+    background:linear-gradient(var(--accent),var(--accent-dim));
+    color:#16100e;border-color:var(--accent);touch-action:auto;
+  }
+  .connect.linked{background:var(--panel-2);color:var(--ink);border-color:var(--green);}
+  .label{
+    font-size:10px;letter-spacing:.22em;color:var(--ink-dim);
+    margin:18px 2px 8px;text-transform:uppercase;
+    display:flex;align-items:center;gap:8px;
+  }
+  .label::after{content:'';flex:1;height:1px;background:var(--line);}
+  .hint{
+    font-size:9px;letter-spacing:.04em;color:var(--accent-dim);
+    background:rgba(255,85,51,.07);border:1px solid rgba(255,85,51,.3);
+    padding:1px 6px;border-radius:4px;white-space:nowrap;
+  }
+  .pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .pad button{height:72px;font-size:15px;display:flex;align-items:center;justify-content:center;}
+  .pad .nav{border-color:var(--accent-dim);}
+  .ghost{visibility:hidden;}
+  .arrow{font-size:28px;line-height:1;pointer-events:none;}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .row button{height:52px;font-size:13px;}
+  .fly{
+    height:58px!important;font-size:14px!important;
+    border-color:var(--accent-dim);
+  }
+  .fly.spinning{
+    background:var(--accent);color:#16100e;border-color:var(--accent);
+    animation:pulse 1s infinite;
+  }
+  @keyframes pulse{
+    0%,100%{box-shadow:0 0 0 0 rgba(255,85,51,.5);}
+    50%{box-shadow:0 0 14px 3px rgba(255,85,51,.5);}
+  }
+  .fire{
+    height:84px!important;font-size:22px!important;letter-spacing:.18em;
+    background:linear-gradient(var(--red),#7e2226);color:#fff;border-color:var(--red);
+  }
+  .fire:active:not(:disabled){transform:translateY(3px) scale(.96);}
+  .fire.cooling{opacity:.5;}
+  .log{
+    margin-top:18px;background:#0a0c10;border:1px solid var(--line);
+    border-radius:8px;padding:10px 12px;height:84px;overflow:auto;
+    font-size:11px;line-height:1.7;color:var(--ink-dim);
+  }
+  .log b{color:var(--accent);} .log .rx{color:var(--blue);}
+  footer{padding:10px 18px 16px;font-size:10px;color:var(--ink-dim);letter-spacing:.08em;text-align:center;}
+</style>
+</head>
+<body>
+<div class="console">
+  <header></header>
+  <div class="bar">
+    <div class="title">TUR<span>RET</span></div>
+    <div class="status">
+      <span class="dot" id="dot"></span>
+      <span id="statusTxt">OFFLINE</span>
+      <span class="tx" id="tx"></span>
+    </div>
+  </div>
+  <div class="body">
+    <button class="connect" id="connectBtn">CONNECT BLUETOOTH</button>
+
+    <div class="label">Aim <span class="hint">HOLD to move · release = STOP</span></div>
+    <div class="pad">
+      <div class="ghost"></div>
+      <button class="nav" data-cmd="UP" data-momentary="1"><span class="arrow">&#9650;</span></button>
+      <div class="ghost"></div>
+      <button class="nav" data-cmd="BL" data-momentary="1"><span class="arrow">&#9664;</span></button>
+      <button class="b-red" data-cmd="STOP" style="font-size:13px;">&#9632; STOP</button>
+      <button class="nav" data-cmd="BR" data-momentary="1"><span class="arrow">&#9654;</span></button>
+      <div class="ghost"></div>
+      <button class="nav" data-cmd="DN" data-momentary="1"><span class="arrow">&#9660;</span></button>
+      <div class="ghost"></div>
+    </div>
+
+    <div class="label">Flywheel <span class="hint">TOGGLE · spin up before firing</span></div>
+    <div class="row">
+      <button class="fly" id="flyBtn">&#10227; FLYWHEEL OFF</button>
+      <button class="fire" id="fireBtn">&#x1F3AF; FIRE</button>
+    </div>
+
+    <div class="log" id="log"><div>ready. tap CONNECT.</div></div>
+  </div>
+  <footer>NUS · ESP32-BLE · hold to aim · spin up · fire</footer>
+</div>
+
+<script>
+  const SVC = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
+  const RX  = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
+  const TX  = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
+
+  let device, rxChar, withResponse = true;
+  const enc = new TextEncoder();
+  const $   = id => document.getElementById(id);
+  const dot = $('dot'), statusTxt = $('statusTxt');
+  const txDot = $('tx'), logEl = $('log'), connectBtn = $('connectBtn');
+  const flyBtn = $('flyBtn'), fireBtn = $('fireBtn');
+
+  // ── Log ──────────────────────────────────────────────
+  function log(html){
+    const d = document.createElement('div');
+    d.innerHTML = html;
+    logEl.appendChild(d);
+    while(logEl.children.length > 60) logEl.firstChild.remove();
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  let _ft;
+  function flashTx(){
+    txDot.classList.add('flash');
+    clearTimeout(_ft);
+    _ft = setTimeout(()=> txDot.classList.remove('flash'), 90);
+  }
+
+  // ── Connection UI ────────────────────────────────────
+  function allButtons(){ return document.querySelectorAll('[data-cmd], #flyBtn, #fireBtn'); }
+  function setConnected(on){
+    dot.classList.toggle('on', on);
+    statusTxt.textContent = on ? 'ONLINE' : 'OFFLINE';
+    connectBtn.textContent = on ? 'DISCONNECT' : 'CONNECT BLUETOOTH';
+    connectBtn.classList.toggle('linked', on);
+    allButtons().forEach(b => b.disabled = !on);
+    if(!on) setFlywheel(false, true);  // UI reset only; firmware stops on BLE drop
+  }
+
+  // ── BLE ──────────────────────────────────────────────
+  async function connect(){
+    if(!navigator.bluetooth){ log('Web Bluetooth not available.'); return; }
+    try{
+      log('requesting device...');
+      device = await navigator.bluetooth.requestDevice({ acceptAllDevices:true, optionalServices:[SVC] });
+      device.addEventListener('gattserverdisconnected', onDisconnect);
+      const server  = await device.gatt.connect();
+      const service = await server.getPrimaryService(SVC);
+      rxChar = await service.getCharacteristic(RX);
+      withResponse = !rxChar.properties.writeWithoutResponse;
+      try{
+        const txChar = await service.getCharacteristic(TX);
+        await txChar.startNotifications();
+        txChar.addEventListener('characteristicvaluechanged', e =>{
+          log(`<span class="rx">rx: ${new TextDecoder().decode(e.target.value)}</span>`);
+        });
+      }catch(_){}
+      setConnected(true);
+      log(`connected to <b>${device.name || 'device'}</b>`);
+    }catch(err){ log('connect failed: ' + err.message); }
+  }
+
+  function onDisconnect(){
+    _isHeld = false;
+    if(_heldBtn){ _heldBtn.classList.remove('held'); _heldBtn = null; }
+    setConnected(false);
+    log('disconnected. motors stopped by firmware.');
+  }
+
+  async function send(cmd){
+    if(!rxChar) return;
+    try{
+      await (withResponse
+        ? rxChar.writeValueWithResponse(enc.encode(cmd))
+        : rxChar.writeValueWithoutResponse(enc.encode(cmd)));
+      flashTx();
+    }catch(err){ log('send err: ' + err.message); }
+  }
+
+  // ── Press lockout (prevents accidental multi-press) ──
+  const LOCKOUT_MS = 100;
+  let _lockoutTimer = null;
+
+  function lockOthers(activeBtn){
+    clearTimeout(_lockoutTimer);
+    allButtons().forEach(b =>{ if(b !== activeBtn) b.disabled = true; });
+    _lockoutTimer = setTimeout(unlockAll, LOCKOUT_MS);
+  }
+  function unlockAll(){
+    clearTimeout(_lockoutTimer);
+    allButtons().forEach(b => b.disabled = false);
+  }
+
+  // ── Momentary aim buttons ────────────────────────────
+  // ONE command on press, ONE "STOP" on release. STOP only kills the
+  // aim motors on the firmware side — flywheel keeps spinning.
+  let _heldBtn = null;
+  let _isHeld  = false;
+
+  function onPress(btn, cmd){
+    if(_isHeld) return;
+    _isHeld  = true;
+    _heldBtn = btn;
+    btn.classList.add('held');
+    lockOthers(btn);
+    send(cmd);
+    log(`tx <b>${cmd}</b>`);
+  }
+
+  function onRelease(){
+    if(!_isHeld) return;
+    _isHeld = false;
+    if(_heldBtn){ _heldBtn.classList.remove('held'); _heldBtn = null; }
+    unlockAll();
+    send('STOP');
+    log('tx <b>STOP</b>');
+  }
+
+  // ── Flywheel toggle ──────────────────────────────────
+  let flyOn = false;
+  function setFlywheel(on, uiOnly){
+    flyOn = on;
+    flyBtn.classList.toggle('spinning', on);
+    flyBtn.innerHTML = on ? '&#10227; FLYWHEEL ON' : '&#10227; FLYWHEEL OFF';
+    if(!uiOnly){
+      send(on ? 'FON' : 'FOFF');
+      log(`tx <b>${on ? 'FON' : 'FOFF'}</b>`);
+    }
+  }
+  setFlywheel(false, true);
+
+  flyBtn.addEventListener('pointerdown', e => e.preventDefault());
+  flyBtn.addEventListener('click', ()=> setFlywheel(!flyOn));
+
+  // ── Fire (one-shot with cooldown matching servo cycle) ──
+  const FIRE_COOLDOWN_MS = 700;  // servo push 0.4s + retract margin
+  fireBtn.addEventListener('pointerdown', e => e.preventDefault());
+  fireBtn.addEventListener('click', ()=>{
+    if(fireBtn.classList.contains('cooling')) return;
+    if(!flyOn) log('<b>warning:</b> flywheel is off');
+    send('FIRE');
+    log('tx <b>FIRE</b>');
+    fireBtn.classList.add('cooling');
+    setTimeout(()=> fireBtn.classList.remove('cooling'), FIRE_COOLDOWN_MS);
+  });
+
+  // ── Wire aim + stop buttons ──────────────────────────
+  connectBtn.addEventListener('click', ()=>{
+    if(device && device.gatt.connected) device.gatt.disconnect();
+    else connect();
+  });
+
+  document.querySelectorAll('[data-cmd]').forEach(btn =>{
+    const cmd       = btn.dataset.cmd;
+    const momentary = btn.dataset.momentary === '1';
+
+    if(momentary){
+      btn.addEventListener('pointerdown', e =>{
+        e.preventDefault();
+        btn.setPointerCapture(e.pointerId);
+        onPress(btn, cmd);
+      });
+      btn.addEventListener('pointerup',     onRelease);
+      btn.addEventListener('pointercancel', onRelease);
+
+    } else if(cmd === 'STOP'){
+      btn.addEventListener('pointerdown', e => e.preventDefault());
+      btn.addEventListener('click', ()=>{
+        onRelease();
+        send('STOP');
+        log('tx <b>STOP</b> (manual)');
+      });
+    }
+  });
+
+  setConnected(false);
+
+  // Last-resort fallback if pointer released outside everything
+  document.addEventListener('pointerup',     onRelease);
+  document.addEventListener('pointercancel', onRelease);
+
+  // Tab switch / screen lock safety
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.hidden) onRelease();
+  });
+</script>
+</body>
+</html>
